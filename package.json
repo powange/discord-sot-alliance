@@ -1,0 +1,14 @@
+{
+  "name": "sot-alliance",
+  "author": {
+    "name": "Pierre Comble",
+    "email": "powange@gmail.com"
+  },
+  "dependencies": {
+    "@discordjs/opus": "^0.1.0",
+    "configstore": "^5.0.1",
+    "discord.js": "^12.1.1",
+    "ffmpeg-static": "^4.1.0",
+    "is-ip": "^3.1.0"
+  }
+}
