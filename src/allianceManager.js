@@ -219,7 +219,9 @@ module.exports = class AllianceManager {
                 participantsDisplay.push(username);
             }
 
-            if (participant.ready === true) {
+            if (participant.skip === true) {
+                readyDisplay.push('⏳');
+            } else if (participant.ready === true) {
                 readyDisplay.push('⚓');
             } else {
                 readyDisplay.push('-');
@@ -256,7 +258,8 @@ module.exports = class AllianceManager {
             .setDescription(`Cette alliance cherche à rassembler ${alliance.amount} ${alliance.boatType}s depuis ${durationMin} minutes.\n\n` +
                 `🤚 Signaler que l'on participe à la création.\n` +
                 `⚓ Indique que vous êtes prêt à lever l'ancre.\n` +
-                `🗑️ Supprime l'ip:port que vous avez rentré.\n\n` +
+                `🗑️ Supprime l'ip:port que vous avez rentré.\n` +
+                `⏳ Signaler que vous passez votre tour pour le prochain lancement.\n\n` +
                 `Comment ça marche ?\n\n` +
                 `1 - Signalez d'abord que vous participez à la création de l'alliance en cliquant sur 🤚.\n` +
                 `2 - Préparez une partie en mode Aventure avec un ${alliance.boatType} en équipage fermé, puis cliquez sur ⚓.\n` +
@@ -289,6 +292,7 @@ module.exports = class AllianceManager {
                 sentMessage.react('🤚');
                 sentMessage.react('⚓');
                 sentMessage.react('🗑️');
+                sentMessage.react('⏳');
             });
 
         } else {
@@ -336,6 +340,18 @@ module.exports = class AllianceManager {
             }).catch(err => {
                 reaction.users.remove(user);
             });
+        } else if (reaction.emoji.name === '⏳') {
+            alliance.setSkip(user).then(participant => {
+                this.saveAlliance(alliance);
+                this.updateMessageEmbed(alliance);
+
+                if (alliance.countParticipants() >= alliance.amount && alliance.allParticipantsReady()) {
+                    this.launchCountdown(alliance);
+                }
+            }).catch(err => {
+                console.log(err);
+                reaction.users.remove(user);
+            });
         } else {
             console.log(reaction);
             reaction.users.remove(user);
@@ -366,6 +382,14 @@ module.exports = class AllianceManager {
                 this.saveAlliance(alliance);
                 this.updateMessageEmbed(alliance);
             }).catch(err => {
+                reaction.users.remove(user);
+            });
+        } else if (reaction.emoji.name === '⏳') {
+            alliance.unsetSkip(user).then(participant => {
+                this.saveAlliance(alliance);
+                this.updateMessageEmbed(alliance);
+            }).catch(err => {
+                console.log(err);
                 reaction.users.remove(user);
             });
         } else {

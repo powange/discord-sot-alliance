@@ -20,6 +20,7 @@ module.exports = class Alliance {
         if (!this.participants.hasOwnProperty(user.id)) {
             this.participants[user.id] = {
                 ready: false,
+                skip: false,
                 ip: ''
             };
             return this.participants[user.id];
@@ -52,9 +53,27 @@ module.exports = class Alliance {
         throw new Error('Le participant n\'existe pas');
     }
 
+    async setSkip(user) {
+        if (this.participants.hasOwnProperty(user.id)) {
+            this.participants[user.id].skip = true;
+            return this.participants[user.id];
+        }
+        throw new Error('Le participant n\'existe pas');
+    }
+
+    async unsetSkip(user) {
+        if (this.participants.hasOwnProperty(user.id)) {
+            this.participants[user.id].skip = false;
+            return this.participants[user.id];
+        }
+        throw new Error('Le participant n\'existe pas');
+    }
+
     async setIp(user, ip) {
         if (this.participants.hasOwnProperty(user.id)) {
-            this.participants[user.id].ip = ip;
+            if(this.participants[user.id].skip === false){
+                this.participants[user.id].ip = ip;
+            }
             return this.participants[user.id];
         }
         throw new Error('Le participant n\'existe pas');
@@ -70,11 +89,26 @@ module.exports = class Alliance {
 
     allParticipantsReady() {
         for (const userID in this.participants){
-            if(this.participants[userID].ready === false){
+            let participant = this.participants[userID];
+            if(participant.skip === false && participant.ready === false){
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * @returns {number}
+     */
+    countParticipants() {
+        let nbParticipants = 0;
+        for (const userID in this.participants){
+            let participant = this.participants[userID];
+            if(participant.skip === false){
+                nbParticipants++;
+            }
+        }
+        return nbParticipants;
     }
 
     getMatchServer(){
