@@ -7,7 +7,7 @@ const Alliance = require('./alliance');
 
 let instance = {};
 
-class AllianceManager {
+module.exports = class AllianceManager {
 
     /**
      * @param guild {Guild}
@@ -227,6 +227,10 @@ class AllianceManager {
             IPDisplay.push('-');
         }
 
+        let timestampNow = Math.floor(Date.now() / 1000);
+        let durationMin = Math.floor((timestampNow - alliance.timestampStart) / 60);
+
+
         // console.log('participantsDisplay ==> ', participantsDisplay);
         // console.log('readyDisplay ==> ', readyDisplay);
         // console.log('IPDisplay ==> ', IPDisplay);
@@ -234,7 +238,7 @@ class AllianceManager {
         const exampleEmbed = new Discord.MessageEmbed()
             .setColor('#0099ff')
             .setTitle('Création d\'alliance')
-            .setDescription(`Cette alliance cherche à rassembler ${alliance.amount} ${alliance.boatType}s.\n\n` +
+            .setDescription(`Cette alliance cherche à rassembler ${alliance.amount} ${alliance.boatType}s depuis ${durationMin} minutes.\n\n` +
                 `🤚 Signaler que l'on participe à la création.\n` +
                 `⚓ Indique que vous êtes prêt à lever l'ancre.\n` +
                 `🗑️ Supprime l'ip:port que vous avez rentré.\n\n` +
@@ -250,17 +254,17 @@ class AllianceManager {
             .addField('\u200b', '\u200b');
 
 
-        if(Object.keys(alliance.participants).length < alliance.amount){
+        if (Object.keys(alliance.participants).length < alliance.amount) {
             exampleEmbed.addField('⚠ Attention ⚠', `Il n'y a actuellement pas assez de participants pour créer une alliance de ${alliance.amount} bateaux.`, false);
         }
 
         let matchServer = alliance.getMatchServer();
-        for (let ip in matchServer){
+        for (let ip in matchServer) {
             let usernames = matchServer[ip].map(userID => {
                 let GuildMember = this.guild.member(userID);
                 return GuildMember.nickname !== null ? GuildMember.nickname : GuildMember.user.username;
             });
-            exampleEmbed.addField(matchServer[ip].length +' bateaux sur le server ' + ip, usernames.join(", "), false);
+            exampleEmbed.addField(matchServer[ip].length + ' bateaux sur le server ' + ip, usernames.join(", "), false);
         }
 
         if (alliance.messageID === null) {
@@ -281,6 +285,12 @@ class AllianceManager {
         }
     }
 
+    /**
+     *
+     * @param reaction
+     * @param user
+     * @param alliance {Alliance}
+     */
     addReaction(reaction, user, alliance) {
         // console.log(reaction);
         // console.log(user);
@@ -318,6 +328,11 @@ class AllianceManager {
 
     }
 
+    /**
+     * @param reaction
+     * @param user
+     * @param alliance {Alliance}
+     */
     removeReaction(reaction, user, alliance) {
         // console.log(reaction);
         // console.log(user);
@@ -363,7 +378,4 @@ class AllianceManager {
                     });
             })
     }
-};
-
-
-module.exports = AllianceManager;
+}

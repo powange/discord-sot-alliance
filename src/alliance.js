@@ -4,6 +4,7 @@ module.exports = class Alliance {
 
     constructor(guildID) {
         this.guildChannelID = guildID;
+        this.timestampStart = Math.floor(Date.now() / 1000);
     };
 
     guildChannelID = null;
@@ -96,7 +97,6 @@ module.exports = class Alliance {
             }
         }
 
-        console.log(matchs);
         return matchs;
     }
 };
