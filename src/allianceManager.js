@@ -181,6 +181,21 @@ module.exports = class AllianceManager {
         return channel;
     }
 
+    getColorEmbed(amount, maxBoats){
+        console.log(amount, maxBoats);
+        const colors = [
+            'rgba(255,0,0,0)',
+            '#0099ff',
+            '#ffaa00',
+            '#f7ff00',
+            '#bbff00',
+            '#00ff88',
+            '#00ff00'
+        ]
+        console.log((6 * maxBoats) / amount, Math.floor((6 * maxBoats) / amount));
+        return colors[Math.floor((6 * maxBoats) / amount)];
+    }
+
     /**
      *
      * @param alliance {Alliance}
@@ -236,7 +251,7 @@ module.exports = class AllianceManager {
         // console.log('IPDisplay ==> ', IPDisplay);
 
         const exampleEmbed = new Discord.MessageEmbed()
-            .setColor('#0099ff')
+            .setColor(this.getColorEmbed(alliance.amount, alliance.getMaxBoatsMatchServer()))
             .setTitle('Création d\'alliance')
             .setDescription(`Cette alliance cherche à rassembler ${alliance.amount} ${alliance.boatType}s depuis ${durationMin} minutes.\n\n` +
                 `🤚 Signaler que l'on participe à la création.\n` +

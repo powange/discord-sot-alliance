@@ -99,4 +99,13 @@ module.exports = class Alliance {
 
         return matchs;
     }
+
+    getMaxBoatsMatchServer(){
+        const matchServer = this.getMatchServer();
+        let max = 0;
+        for (let ip in matchServer) {
+            max = Math.max(max, matchServer[ip].length);
+        }
+        return max;
+    }
 };
