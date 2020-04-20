@@ -386,7 +386,7 @@ module.exports = class AllianceManager {
         voiceChannel
             .join()
             .then(function (connection) {
-                connection.play('./Ressources/countdown.webm', {volume: 2})
+                connection.play('./Ressources/countdown.webm', {volume: 1})
                     .on('finish', () => {
                         console.log('countdown.webm has finished playing!');
                         voiceChannel.leave();
