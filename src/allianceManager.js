@@ -266,6 +266,7 @@ module.exports = class AllianceManager {
                 `⏳ Signaler que vous passez votre tour pour le prochain lancement.\n\n` +
                 `Les réactions réservées aux participants créateurs (👑) :\n` +
                 `🔄 Reset les adresses ip:port, ainsi que l'état sur la levé de l'ancre.\n\n` +
+                `❌ Supprime la création d'alliance définitivement.\n\n` +
                 `Comment ça marche ?\n\n` +
                 `1 - Signalez d'abord que vous participez à la création de l'alliance en cliquant sur 🤚.\n` +
                 `2 - Préparez une partie en mode Aventure avec un ${alliance.boatType} en équipage fermé, puis cliquez sur ⚓.\n` +
@@ -300,6 +301,7 @@ module.exports = class AllianceManager {
                 sentMessage.react('🗑️');
                 sentMessage.react('⏳');
                 sentMessage.react('🔄');
+                sentMessage.react('❌');
             });
 
         } else {
@@ -313,7 +315,7 @@ module.exports = class AllianceManager {
 
     /**
      *
-     * @param reaction
+     * @param reaction {MessageReaction}
      * @param user {GuildMember}
      * @param alliance {Alliance}
      */
@@ -359,27 +361,55 @@ module.exports = class AllianceManager {
                 console.log(err);
                 reaction.users.remove(user);
             });
-        } else if (reaction.emoji.name === '🔄' && alliance.proprietaireID === user.id) {
-            alliance.resetLaunch().then(participant => {
-                reaction.message.reactions.cache.each(MessageReaction => {
-                    let emoji = MessageReaction.emoji.name;
-                    let emojiToDelte = ['⚓', '🗑️', '⏳', '🔄'];
-                    if(emojiToDelte.includes(emoji)){
-                        MessageReaction.users.fetch().then(users => {
-                            users;
-                        });
-                        MessageReaction.users.cache.filter(u => u.bot === false).each(u => {
-                            MessageReaction.users.remove(u);
-                        });
-                    }
-                })
+        } else if (alliance.proprietaireID === user.id) {
+            if (reaction.emoji.name === '🔄') {
+                alliance.resetLaunch().then(participant => {
+                    reaction.message.reactions.cache.each(MessageReaction => {
+                        let emoji = MessageReaction.emoji.name;
+                        let emojiToDelte = ['⚓', '🗑️', '⏳', '🔄'];
+                        if(emojiToDelte.includes(emoji)){
+                            MessageReaction.users.fetch().then(users => {
+                                users;
+                            });
+                            MessageReaction.users.cache.filter(u => u.bot === false).each(u => {
+                                MessageReaction.users.remove(u);
+                            });
+                        }
+                    })
 
-                this.saveAlliance(alliance);
-                this.updateMessageEmbed(alliance);
-            }).catch(err => {
-                console.log(err);
-                reaction.users.remove(user);
-            });
+                    this.saveAlliance(alliance);
+                    this.updateMessageEmbed(alliance);
+                }).catch(err => {
+                    console.log(err);
+                    reaction.users.remove(user);
+                });
+            } else if (reaction.emoji.name === '❌') {
+                reaction.message.channel.send(`Êtes-vous sûr de vouloir supprimer définitivement la création d'alliance ?\n\🚫 Non\n\✅ Oui\n\nDonnez votre réponse en utilisant la réaction de votre choix ci-dessous.`).then((messageConfirmation) => {
+
+                    messageConfirmation.react('🚫');
+                    messageConfirmation.react('✅');
+
+                    const filter = (r, u) => {
+                        return ['✅', '🚫'].includes(r.emoji.name) && user.id === u.id;
+                    };
+                    messageConfirmation.awaitReactions(filter, {time: 60000, max: 1, errors: ['time']})
+                        .then(collected => {
+                            const r = collected.first();
+
+                            if (r.emoji.name === '✅') {
+                                this.deleteAllianceByCategoryID(alliance.categoryChannelID);
+                            } else {
+                                messageConfirmation.delete();
+                                reaction.users.remove(user);
+                            }
+
+                        })
+                        .catch(() => {
+                            message.reply('you reacted with neither a check, nor a stop.');
+                        });
+                });
+
+            }
         } else {
             console.log(reaction);
             reaction.users.remove(user);
