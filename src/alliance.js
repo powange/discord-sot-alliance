@@ -12,6 +12,7 @@ module.exports = class Alliance {
     textChannelID = null;
     voiceChannelID = null;
     messageID = null;
+    proprietaireID = null;
     participants = {};
     amount = null;
     boatType = null;
@@ -69,9 +70,17 @@ module.exports = class Alliance {
         throw new Error('Le participant n\'existe pas');
     }
 
+    async resetLaunch() {
+        for (const userID in this.participants) {
+            this.participants[userID].ip = '';
+            this.participants[userID].skip = false;
+            this.participants[userID].ready = false;
+        }
+    }
+
     async setIp(user, ip) {
         if (this.participants.hasOwnProperty(user.id)) {
-            if(this.participants[user.id].skip === false){
+            if (this.participants[user.id].skip === false) {
                 this.participants[user.id].ip = ip;
             }
             return this.participants[user.id];
@@ -88,9 +97,9 @@ module.exports = class Alliance {
     }
 
     allParticipantsReady() {
-        for (const userID in this.participants){
+        for (const userID in this.participants) {
             let participant = this.participants[userID];
-            if(participant.skip === false && participant.ready === false){
+            if (participant.skip === false && participant.ready === false) {
                 return false;
             }
         }
@@ -102,20 +111,20 @@ module.exports = class Alliance {
      */
     countParticipants() {
         let nbParticipants = 0;
-        for (const userID in this.participants){
+        for (const userID in this.participants) {
             let participant = this.participants[userID];
-            if(participant.skip === false){
+            if (participant.skip === false) {
                 nbParticipants++;
             }
         }
         return nbParticipants;
     }
 
-    getMatchServer(){
+    getMatchServer() {
         let matchs = {};
-        for(const participantID in this.participants){
+        for (const participantID in this.participants) {
             let participant = this.participants[participantID];
-            if(participant.ip !== ''){
+            if (participant.ip !== '') {
                 if (!matchs.hasOwnProperty(participant.ip)) {
                     matchs[participant.ip] = [];
                 }
@@ -125,8 +134,8 @@ module.exports = class Alliance {
         }
 
 
-        for(const ip in matchs){
-            if(matchs[ip].length < 2){
+        for (const ip in matchs) {
+            if (matchs[ip].length < 2) {
                 delete matchs[ip];
             }
         }
@@ -134,7 +143,7 @@ module.exports = class Alliance {
         return matchs;
     }
 
-    getMaxBoatsMatchServer(){
+    getMaxBoatsMatchServer() {
         const matchServer = this.getMatchServer();
         let max = 0;
         for (let ip in matchServer) {

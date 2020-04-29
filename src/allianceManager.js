@@ -48,6 +48,7 @@ module.exports = class AllianceManager {
             alliance.messageID = alliances[key].messageID;
             alliance.amount = alliances[key].amount;
             alliance.boatType = alliances[key].boatType;
+            alliance.proprietaireID = alliances[key].proprietaireID;
             alliance.participants = alliances[key].participants;
             this.alliances.set(alliance.categoryChannelID, alliance);
         }
@@ -68,12 +69,13 @@ module.exports = class AllianceManager {
     };
 
     /**
-     *
+     * @param guildMember {GuildMember}
      * @param boatType {string}
      * @param amount {int}
      */
-    create(boatType, amount) {
+    create(guildMember, boatType, amount) {
         let alliance = new Alliance(this.guild.id);
+        alliance.proprietaireID = guildMember.id;
         alliance.boatType = boatType;
         alliance.amount = amount;
 
@@ -134,6 +136,7 @@ module.exports = class AllianceManager {
                 'textChannelID': a.textChannelID,
                 'voiceChannelID': a.voiceChannelID,
                 'messageID': a.messageID,
+                'proprietaireID': a.proprietaireID,
                 'participants': a.participants,
                 'amount': a.amount,
                 'boatType': a.boatType,
@@ -181,7 +184,7 @@ module.exports = class AllianceManager {
         return channel;
     }
 
-    getColorEmbed(amount, maxBoats){
+    getColorEmbed(amount, maxBoats) {
         console.log(amount, maxBoats);
         const colors = [
             'rgba(255,0,0,0)',
@@ -212,12 +215,12 @@ module.exports = class AllianceManager {
             let GuildMember = this.guild.member(userID);
             let username = GuildMember.nickname !== null ? GuildMember.nickname : GuildMember.user.username;
 
-            // membersVoiceChannel.fetch();
-            if (GuildMember.voice.channelID === alliance.voiceChannelID) {
-                participantsDisplay.push('🔉 ' + username);
-            } else {
-                participantsDisplay.push(username);
-            }
+            let participantDisplay = [];
+            if (GuildMember.id === alliance.proprietaireID) { participantDisplay.push('👑'); }
+            if (GuildMember.voice.channelID === alliance.voiceChannelID) { participantDisplay.push('🔉'); }
+            participantDisplay.push(username);
+
+            participantsDisplay.push(participantDisplay.join(' '));
 
             if (participant.skip === true) {
                 readyDisplay.push('⏳');
@@ -256,10 +259,13 @@ module.exports = class AllianceManager {
             .setColor(this.getColorEmbed(alliance.amount, alliance.getMaxBoatsMatchServer()))
             .setTitle('Création d\'alliance')
             .setDescription(`Cette alliance cherche à rassembler ${alliance.amount} ${alliance.boatType}s depuis ${durationMin} minutes.\n\n` +
+                `Les réactions :\n` +
                 `🤚 Signaler que l'on participe à la création.\n` +
                 `⚓ Indique que vous êtes prêt à lever l'ancre.\n` +
                 `🗑️ Supprime l'ip:port que vous avez rentré.\n` +
                 `⏳ Signaler que vous passez votre tour pour le prochain lancement.\n\n` +
+                `Les réactions réservées aux participants créateurs (👑) :\n` +
+                `🔄 Reset les adresses ip:port, ainsi que l'état sur la levé de l'ancre.\n\n` +
                 `Comment ça marche ?\n\n` +
                 `1 - Signalez d'abord que vous participez à la création de l'alliance en cliquant sur 🤚.\n` +
                 `2 - Préparez une partie en mode Aventure avec un ${alliance.boatType} en équipage fermé, puis cliquez sur ⚓.\n` +
@@ -293,6 +299,7 @@ module.exports = class AllianceManager {
                 sentMessage.react('⚓');
                 sentMessage.react('🗑️');
                 sentMessage.react('⏳');
+                sentMessage.react('🔄');
             });
 
         } else {
@@ -307,7 +314,7 @@ module.exports = class AllianceManager {
     /**
      *
      * @param reaction
-     * @param user
+     * @param user {GuildMember}
      * @param alliance {Alliance}
      */
     addReaction(reaction, user, alliance) {
@@ -348,6 +355,27 @@ module.exports = class AllianceManager {
                 if (alliance.countParticipants() >= alliance.amount && alliance.allParticipantsReady()) {
                     this.launchCountdown(alliance);
                 }
+            }).catch(err => {
+                console.log(err);
+                reaction.users.remove(user);
+            });
+        } else if (reaction.emoji.name === '🔄' && alliance.proprietaireID === user.id) {
+            alliance.resetLaunch().then(participant => {
+                reaction.message.reactions.cache.each(MessageReaction => {
+                    let emoji = MessageReaction.emoji.name;
+                    let emojiToDelte = ['⚓', '🗑️', '⏳', '🔄'];
+                    if(emojiToDelte.includes(emoji)){
+                        MessageReaction.users.fetch().then(users => {
+                            users;
+                        });
+                        MessageReaction.users.cache.filter(u => u.bot === false).each(u => {
+                            MessageReaction.users.remove(u);
+                        });
+                    }
+                })
+
+                this.saveAlliance(alliance);
+                this.updateMessageEmbed(alliance);
             }).catch(err => {
                 console.log(err);
                 reaction.users.remove(user);

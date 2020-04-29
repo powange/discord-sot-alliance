@@ -28,6 +28,6 @@ module.exports = {
         }
 
         const allianceManager = AllianceManager.getInstance(message.guild);
-        allianceManager.create(boatType, amount);
+        allianceManager.create(message.member, boatType, amount);
     },
 };

@@ -38,7 +38,7 @@ module.exports = {
                                 messages.first().delete();
 
                                 const allianceManager = AllianceManager.getInstance(message.guild);
-                                allianceManager.create(boatType, amount).then(alliance => {
+                                allianceManager.create(message.member, boatType, amount).then(alliance => {
                                     console.log('alliance ===> ', alliance);
                                     channel.send(`${user} a démarré une création d'alliance de ${amount} ${boatType}s => <#${alliance.textChannelID}>`);
                                 });

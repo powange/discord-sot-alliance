@@ -7,7 +7,10 @@ module.exports = {
     execute(message, args) {
         allianceManager = AllianceManager.getInstance(message.guild);
         console.log();
-        message.channel.send(JSON.stringify(allianceManager.alliances, null, 4), {split: true});
+        allianceManager.alliances.each(alliance => {
+            message.channel.send(JSON.stringify(alliance, null, 4), {split: true});
+            message.channel.send(JSON.stringify(alliance.participants, null, 4), {split: true});
+        });
         message.delete();
     },
 };
