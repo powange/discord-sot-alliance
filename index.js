@@ -59,7 +59,10 @@ client.on('message', async message => {
                     console.log(err);
                     message.delete();
                 });
-            } else if(alliance.proprietaireID === message.author.id) {
+                return;
+            }
+
+            if(alliance.proprietaireID === message.author.id) {
                 let members = message.mentions.members.filter(u => u.user.bot === false);
                 if (members.size) {
                     const user = await alliancesManager.setProprietaireID(members.first(), alliance);
