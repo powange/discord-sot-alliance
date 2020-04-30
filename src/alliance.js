@@ -17,6 +17,22 @@ module.exports = class Alliance {
     amount = null;
     boatType = null;
 
+    /**
+     * @param user {GuildMember}
+     * @returns {Promise<GuildMember>}
+     */
+    async setProprietaireID(user) {
+        if (this.participants.hasOwnProperty(user.id)) {
+            this.proprietaireID = user.id;
+            return user;
+        }
+        throw new Error('Le participant n\'existe pas');
+    }
+
+    /**
+     * @param user {GuildMember}
+     * @returns {Promise<*>}
+     */
     async addParticipant(user) {
         if (!this.participants.hasOwnProperty(user.id)) {
             this.participants[user.id] = {
@@ -29,6 +45,10 @@ module.exports = class Alliance {
         throw new Error('Le participant existe déjà');
     }
 
+    /**
+     * @param user {GuildMember}
+     * @returns {Promise<void>}
+     */
     async removeParticipant(user) {
         if (this.participants.hasOwnProperty(user.id)) {
             let participant = this.participants[user.id];
@@ -38,6 +58,10 @@ module.exports = class Alliance {
         throw new Error('Le participant n\'existe pas');
     }
 
+    /**
+     * @param user {GuildMember}
+     * @returns {Promise<*>}
+     */
     async setReady(user) {
         if (this.participants.hasOwnProperty(user.id)) {
             this.participants[user.id].ready = true;
@@ -46,6 +70,10 @@ module.exports = class Alliance {
         throw new Error('Le participant n\'existe pas');
     }
 
+    /**
+     * @param user {GuildMember}
+     * @returns {Promise<*>}
+     */
     async unsetReady(user) {
         if (this.participants.hasOwnProperty(user.id)) {
             this.participants[user.id].ready = false;
@@ -54,6 +82,10 @@ module.exports = class Alliance {
         throw new Error('Le participant n\'existe pas');
     }
 
+    /**
+     * @param user {GuildMember}
+     * @returns {Promise<*>}
+     */
     async setSkip(user) {
         if (this.participants.hasOwnProperty(user.id)) {
             this.participants[user.id].skip = true;
@@ -62,6 +94,10 @@ module.exports = class Alliance {
         throw new Error('Le participant n\'existe pas');
     }
 
+    /**
+     * @param user {GuildMember}
+     * @returns {Promise<*>}
+     */
     async unsetSkip(user) {
         if (this.participants.hasOwnProperty(user.id)) {
             this.participants[user.id].skip = false;
@@ -70,6 +106,9 @@ module.exports = class Alliance {
         throw new Error('Le participant n\'existe pas');
     }
 
+    /**
+     * @returns {Promise<void>}
+     */
     async resetLaunch() {
         for (const userID in this.participants) {
             this.participants[userID].ip = '';
@@ -78,6 +117,11 @@ module.exports = class Alliance {
         }
     }
 
+    /**
+     * @param user {GuildMember}
+     * @param ip
+     * @returns {Promise<*>}
+     */
     async setIp(user, ip) {
         if (this.participants.hasOwnProperty(user.id)) {
             if (this.participants[user.id].skip === false) {
@@ -88,6 +132,10 @@ module.exports = class Alliance {
         throw new Error('Le participant n\'existe pas');
     }
 
+    /**
+     * @param user {GuildMember}
+     * @returns {Promise<*>}
+     */
     async unsetIp(user) {
         if (this.participants.hasOwnProperty(user.id)) {
             this.participants[user.id].ip = '';
@@ -96,6 +144,9 @@ module.exports = class Alliance {
         throw new Error('Le participant n\'existe pas');
     }
 
+    /**
+     * @returns {boolean}
+     */
     allParticipantsReady() {
         for (const userID in this.participants) {
             let participant = this.participants[userID];
@@ -120,6 +171,9 @@ module.exports = class Alliance {
         return nbParticipants;
     }
 
+    /**
+     * @returns {{}}
+     */
     getMatchServer() {
         let matchs = {};
         for (const participantID in this.participants) {
@@ -143,6 +197,9 @@ module.exports = class Alliance {
         return matchs;
     }
 
+    /**
+     * @returns {number}
+     */
     getMaxBoatsMatchServer() {
         const matchServer = this.getMatchServer();
         let max = 0;

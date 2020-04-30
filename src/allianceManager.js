@@ -1,5 +1,4 @@
 'use strict';
-
 const Discord = require('discord.js');
 const {Guild, Collection} = require('discord.js');
 const Configstore = require('configstore');
@@ -126,7 +125,6 @@ module.exports = class AllianceManager {
         this.saveAlliances();
     }
 
-
     saveAlliances() {
         let alliances = {};
         this.alliances.each(a => {
@@ -146,8 +144,7 @@ module.exports = class AllianceManager {
     }
 
     /**
-     *
-     * @param categoryChannelID
+     * @param categoryChannelID {string}
      * @returns {null|Alliance}
      */
     getAlliance(categoryChannelID) {
@@ -166,6 +163,10 @@ module.exports = class AllianceManager {
         return null;
     }
 
+    /**
+     * @param categoryChannelID {string}
+     * @returns {Promise<Holds>}
+     */
     async deleteAllianceByCategoryID(categoryChannelID) {
         console.log('Delete alliance by caetgoryID ' + categoryChannelID);
         this.alliances.delete(categoryChannelID);
@@ -185,7 +186,6 @@ module.exports = class AllianceManager {
     }
 
     getColorEmbed(amount, maxBoats) {
-        console.log(amount, maxBoats);
         const colors = [
             'rgba(255,0,0,0)',
             '#0099ff',
@@ -194,8 +194,7 @@ module.exports = class AllianceManager {
             '#bbff00',
             '#00ff88',
             '#00ff00'
-        ]
-        console.log((6 * maxBoats) / amount, Math.floor((6 * maxBoats) / amount));
+        ];
         return colors[Math.floor((6 * maxBoats) / amount)];
     }
 
@@ -259,19 +258,21 @@ module.exports = class AllianceManager {
             .setColor(this.getColorEmbed(alliance.amount, alliance.getMaxBoatsMatchServer()))
             .setTitle('Création d\'alliance')
             .setDescription(`Cette alliance cherche à rassembler ${alliance.amount} ${alliance.boatType}s depuis ${durationMin} minutes.\n\n` +
+                `Comment ça marche ?\n\n` +
+                `1 - Signalez d'abord que vous participez à la création de l'alliance en cliquant sur 🤚.\n` +
+                `2 - Préparez une partie en mode Aventure avec un ${alliance.boatType} en équipage fermé, puis cliquez sur ⚓.\n` +
+                `3 - Un décompte audio dans le vocal Discord aura lieu. À la fin du décompte, cliquez dans votre jeu, sur "Lever l'ancre".\n` +
+                `4 - Une fois votre ip:port du server récupéré, copier la simplement dans ce channel.\n\n` +
                 `Les réactions :\n` +
                 `🤚 Signaler que l'on participe à la création.\n` +
                 `⚓ Indique que vous êtes prêt à lever l'ancre.\n` +
                 `🗑️ Supprime l'ip:port que vous avez rentré.\n` +
                 `⏳ Signaler que vous passez votre tour pour le prochain lancement.\n\n` +
-                `Les réactions réservées aux participants créateurs (👑) :\n` +
-                `🔄 Reset les adresses ip:port, ainsi que l'état sur la levé de l'ancre.\n\n` +
+                `Les réactions réservées au participant créateur (👑) :\n` +
+                `🔄 Reset les adresses ip:port, ainsi que l'état sur la levé de l'ancre.\n` +
                 `❌ Supprime la création d'alliance définitivement.\n\n` +
-                `Comment ça marche ?\n\n` +
-                `1 - Signalez d'abord que vous participez à la création de l'alliance en cliquant sur 🤚.\n` +
-                `2 - Préparez une partie en mode Aventure avec un ${alliance.boatType} en équipage fermé, puis cliquez sur ⚓.\n` +
-                `3 - Un décompte audio dans le vocal Discord aura lieu. À la fin du décompte, cliquez dans votre jeu, sur "Lever l'ancre".\n` +
-                `4 - Une fois votre ip:port du server récupéré, copier la simplement dans ce channel.`)
+                `Le créateur peut transférer son statut en taguant un participant dans un message ci-dessous.\n\n`
+            )
             .addField('\u200b', '\u200b')
             .addField('Participants', participantsDisplay.join("\n"), true)
             .addField('Prêt à lever l\'ancre', readyDisplay.join("\n"), true)
@@ -320,11 +321,6 @@ module.exports = class AllianceManager {
      * @param alliance {Alliance}
      */
     addReaction(reaction, user, alliance) {
-        // console.log(reaction);
-        // console.log(user);
-        // console.log(reaction.message.channel.guild.member(user));
-        // console.log(alliance);
-
         if (reaction.emoji.name === '🤚') {
             alliance.addParticipant(user).then(participant => {
                 this.saveAlliance(alliance);
@@ -411,7 +407,6 @@ module.exports = class AllianceManager {
 
             }
         } else {
-            console.log(reaction);
             reaction.users.remove(user);
         }
 
@@ -423,10 +418,6 @@ module.exports = class AllianceManager {
      * @param alliance {Alliance}
      */
     removeReaction(reaction, user, alliance) {
-        // console.log(reaction);
-        // console.log(user);
-        // console.log(alliance);
-
         if (reaction.emoji.name === '🤚') {
             alliance.removeParticipant(user).then(participant => {
                 this.saveAlliance(alliance);
@@ -455,6 +446,12 @@ module.exports = class AllianceManager {
         }
     }
 
+    /**
+     * @param ip
+     * @param user
+     * @param alliance {Alliance}
+     * @returns {Promise<*>}
+     */
     async setIp(ip, user, alliance) {
         alliance.setIp(user, ip).then(participant => {
             this.saveAlliance(alliance);
@@ -463,6 +460,22 @@ module.exports = class AllianceManager {
         return ip;
     }
 
+    /**
+     * @param user {GuildMember}
+     * @param alliance {Alliance}
+     * @returns {Promise<GuildMember>}
+     */
+    async setProprietaireID(user, alliance) {
+        await alliance.setProprietaireID(user).then(u => {
+            this.saveAlliance(alliance);
+            this.updateMessageEmbed(alliance);
+        }).catch(err => console.log(err));
+        return user;
+    }
+
+    /**
+     * @param alliance {Alliance}
+     */
     launchCountdown(alliance) {
         let voiceChannel = this.guild.channels.cache.get(alliance.voiceChannelID);
         voiceChannel

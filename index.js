@@ -3,7 +3,7 @@ const Discord = require('discord.js');
 const AllianceManager = require('./src/allianceManager');
 const isIp = require('is-ip');
 
-const client = new Discord.Client({ partials: ['MESSAGE', 'REACTION'] });
+const client = new Discord.Client({partials: ['MESSAGE', 'REACTION']});
 client.commands = new Discord.Collection();
 
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
@@ -37,36 +37,46 @@ client.on("guildDelete", guild => {
     client.user.setActivity(`Serving ${client.guilds.size} servers`);
 });
 
-client.on('message', message => {
 
-    // This event will run on every single message received, from any channel or DM.
+client.on('message', async message => {
 
     // It's good practice to ignore other bots. This also makes your bot ignore itself
     // and not get into a spam loop (we call that "botception").
     if (message.author.bot) return;
 
-    const alliancesManager = AllianceManager.getInstance(message.guild);
-    let alliancesMatch = alliancesManager.alliances.filter(a => a.textChannelID === message.channel.id);
+    try {
+        const alliancesManager = AllianceManager.getInstance(message.guild);
+        let alliancesMatch = alliancesManager.alliances.filter(a => a.textChannelID === message.channel.id);
 
-    if (alliancesMatch.size) {
+        if (alliancesMatch.size) {
+            const alliance = alliancesMatch.first();
 
-        const messageSplit = message.content.split(':');
-        if (isIp.v4(messageSplit[0])) {
-            alliancesManager.setIp(message.content, message.author, alliancesMatch.first()).then(ip => {
-                message.delete();
-            }).catch(err => {
-                console.log(err);
-                message.delete();
-            });
-        }else{
-            message.reply('Commande non authorisé')
-                .then(msg => {
-                    msg.delete({timeout: 5000}).then(msg => {
-                        message.delete();
-                    }).catch(err => console.log(err));
-                }).catch(err => console.log(err));
+            const messageSplit = message.content.split(':');
+            if (isIp.v4(messageSplit[0])) {
+                alliancesManager.setIp(message.content, message.author, alliance).then(ip => {
+                    message.delete();
+                }).catch(err => {
+                    console.log(err);
+                    message.delete();
+                });
+            } else if(alliance.proprietaireID === message.author.id) {
+                let members = message.mentions.members.filter(u => u.user.bot === false);
+                if (members.size) {
+                    const user = await alliancesManager.setProprietaireID(members.first(), alliance);
+                    console.log(`Le nouveau créateur de cette alliance est ${user}`);
+                    await replyMessageTemp(message, `Le nouveau créateur de cette alliance est ${user}`);
+                    return;
+                }
+            }
+
+            await replyMessageTemp(message, 'Commande non authorisé');
+            return;
         }
+    } catch (e) {
+        console.error(e);
+        await replyMessageTemp(message, 'there was an error trying to execute that command!');
     }
+
 
     // Also good practice to ignore any message that does not start with our prefix,
     // which is set in the configuration file.
@@ -84,6 +94,7 @@ client.on('message', message => {
 
     if (!command) return;
 
+    // This event will run on every single message received, from any channel or DM.
     if (command.guildOnly && message.channel.type !== 'text') {
         return message.reply('I can\'t execute that command inside DMs!');
     }
@@ -93,7 +104,8 @@ client.on('message', message => {
         if (command.usage) {
             reply += `\nThe proper usage would be: \`${prefix}${command.name} ${command.usage}\``;
         }
-        return message.channel.send(reply);
+        message.channel.send(reply);
+        return;
     }
 
     if (!cooldowns.has(message.guild.id)) {
@@ -115,7 +127,9 @@ client.on('message', message => {
 
         if (now < expirationTime) {
             const timeLeft = (expirationTime - now) / 1000;
-            return message.reply(`please wait ${timeLeft.toFixed(1)} more second(s) before reusing the \`${command.name}\` command.`);
+
+            await replyMessageTemp(message, `please wait ${timeLeft.toFixed(1)} more second(s) before reusing the \`${command.name}\` command.`);
+            return;
         }
     }
 
@@ -126,13 +140,8 @@ client.on('message', message => {
         command.execute(message, args);
     } catch (error) {
         console.error(error);
-        message.reply('there was an error trying to execute that command!');
+        await replyMessageTemp(message, 'there was an error trying to execute that command!');
     }
-
-    // MembersVoice.parse(message);
-
-    // const channelsVoice = message.guild.channels.cache.filter(c => c.type === 'voice' && c.parentID === '697310977401815120');
-    // console.log(channelsVoice);
 });
 
 client.on('messageReactionAdd', async (reaction, user) => {
@@ -192,4 +201,15 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         }
     }
 });
+
 client.login(token);
+
+/**
+ * @param message {Message}
+ * @param text {string}
+ */
+async function replyMessageTemp(message, text) {
+    const msg = await message.reply(text);
+    await msg.delete({timeout: 5000});
+    message.delete();
+}
