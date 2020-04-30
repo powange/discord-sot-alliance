@@ -277,7 +277,8 @@ module.exports = class AllianceManager {
             .addField('Participants', participantsDisplay.join("\n"), true)
             .addField('Prêt à lever l\'ancre', readyDisplay.join("\n"), true)
             .addField('IP', IPDisplay.join("\n"), true)
-            .addField('\u200b', '\u200b');
+            .addField('\u200b', '\u200b')
+            .setFooter(`Discord SOT Launch Alliance créé par powange#6460`);
 
 
         if (Object.keys(alliance.participants).length < alliance.amount) {
