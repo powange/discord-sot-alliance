@@ -158,7 +158,6 @@ client.on('messageReactionAdd', async (reaction, user) => {
     }
 
     if (user.bot === false) {
-        console.log(reaction);
         const alliancesManager = AllianceManager.getInstance(reaction.message.guild);
         let alliancesMatch = alliancesManager.alliances.filter(a => a.messageID === reaction.message.id);
 
