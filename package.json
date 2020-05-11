@@ -5,7 +5,7 @@
     "email": "powange@gmail.com"
   },
   "dependencies": {
-    "@discordjs/opus": "^0.1.0",
+    "@discordjs/opus": "^0.3.2",
     "configstore": "^5.0.1",
     "discord.js": "^12.1.1",
     "ffmpeg-static": "^4.1.0",

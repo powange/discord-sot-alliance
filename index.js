@@ -51,13 +51,29 @@ client.on('message', async message => {
         if (alliancesMatch.size) {
             const alliance = alliancesMatch.first();
 
+            if(alliance.isAFK(message.member)){
+                alliance.unsetAFK(message.member);
+                alliance.updateMessageEmbed();
+            }
+
             const messageSplit = message.content.split(':');
             if (isIp.v4(messageSplit[0])) {
-                alliancesManager.setIp(message.content, message.author, alliance).then(ip => {
+
+                alliance.setIp(message.member, message.content).then(participant => {
+                    alliancesManager.saveAlliance(alliance);
+                    alliance.updateMessageEmbed();
+                }).catch(err => console.log(err));
+                message.delete();
+                return;
+            }
+
+            if(message.content === `afk`){
+                alliance.setAFK(message.member).then(async participant => {
+                    alliance.updateMessageEmbed();
                     message.delete();
                 }).catch(err => {
                     console.log(err);
-                    message.delete();
+                    reaction.users.remove(user);
                 });
                 return;
             }
@@ -65,9 +81,35 @@ client.on('message', async message => {
             if(alliance.proprietaireID === message.author.id) {
                 let members = message.mentions.members.filter(u => u.user.bot === false);
                 if (members.size) {
-                    const user = await alliancesManager.setProprietaireID(members.first(), alliance);
-                    console.log(`Le nouveau créateur de cette alliance est ${user}`);
-                    await replyMessageTemp(message, `Le nouveau créateur de cette alliance est ${user}`);
+                    if(message.content.startsWith(`afk `)){
+                        const user = members.first();
+                        alliance.setAFK(user).then(async participant => {
+                            alliance.updateMessageEmbed();
+                            console.log(`Le participant ${user} a été mis en mode AFK`);
+                            await replyMessageTemp(message, `Le participant ${user} a été mis en mode AFK`);
+                        }).catch(err => {
+                            console.log(err);
+                            reaction.users.remove(user);
+                        });
+                        return;
+                    } else if(message.content.startsWith(`creator `)){
+                        const user = await alliancesManager.setProprietaireID(members.first(), alliance);
+                        alliance.updateMessageEmbed();
+                        console.log(`Le nouveau créateur de cette alliance est ${user}`);
+                        await replyMessageTemp(message, `Le nouveau créateur de cette alliance est ${user}`);
+                        return;
+                    }
+                } else if(message.content === `countdownSpeed`){
+                    let countdownIsSpeed = alliance.switchCountdownSpeed();
+                    await replyMessageTemp(message, `Le décompte est désormais en **mode ` + (countdownIsSpeed ? 'rapide' : 'lent') + '**.');
+                    return;
+                } else if(message.content === `muteMembers`){
+                    let muteMembersStatut = alliance.switchMuteMembers();
+                    if(muteMembersStatut){
+                        await replyMessageTemp(message, `Les membres du Vocal seront mute pendant le décompte.`);
+                    }else{
+                        await replyMessageTemp(message, `Les membres du Vocal ne seront pas mute pendant le décompte.`);
+                    }
                     return;
                 }
             }
@@ -199,7 +241,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 
         if (alliancesMatch.size) {
             let alliance = alliancesMatch.first();
-            alliancesManager.updateMessageEmbed(alliance)
+            alliance.updateMessageEmbed()
         }
     }
 });
@@ -212,6 +254,6 @@ client.login(token);
  */
 async function replyMessageTemp(message, text) {
     const msg = await message.reply(text);
-    await msg.delete({timeout: 5000});
+    await msg.delete({timeout: 5000}).catch(e => console.log(e));
     message.delete();
 }
