@@ -217,7 +217,7 @@ module.exports = class AllianceManager {
                 this.saveAlliance(alliance);
                 alliance.updateMessageEmbed();
 
-                if (Object.keys(alliance.participants).length >= alliance.amount && alliance.allParticipantsReady()) {
+                if (alliance.countParticipants() >= alliance.amount && alliance.allParticipantsReady()) {
                     alliance.launchCountdown();
                 }
             }).catch(err => {

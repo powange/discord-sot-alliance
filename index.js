@@ -228,6 +228,24 @@ client.on('messageReactionRemove', async (reaction, user) => {
             let alliance = alliancesMatch.first();
             alliancesManager.removeReaction(reaction, user, alliance);
         }
+    } else if(user.bot === true && user.id === client.user.id) {
+        const emojis = ['🤚', '⚓', '🗑️', '⏳', '🔄', '❌'];
+        if(emojis.includes(reaction.emoji.name)){
+            const alliancesManager = AllianceManager.getInstance(reaction.message.guild);
+            let alliancesMatch = alliancesManager.alliances.filter(a => a.messageID === reaction.message.id);
+
+            if (alliancesMatch.size) {
+                let alliance = alliancesMatch.first();
+
+                if (alliance.messageID !== null) {
+                    alliance.guild.channels.cache.get(alliance.textChannelID)
+                        .messages.fetch(alliance.messageID).then(message => {
+                        message.react(reaction.emoji.name);
+                    }).catch(console.error);
+
+                }
+            }
+        }
     }
 });
 
