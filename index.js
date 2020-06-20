@@ -1,5 +1,6 @@
 const fs = require('fs');
 const Discord = require('discord.js');
+const {MessageAttachment} = require('discord.js');
 const AllianceManager = require('./src/allianceManager');
 const isIp = require('is-ip');
 
@@ -51,23 +52,30 @@ client.on('message', async message => {
         if (alliancesMatch.size) {
             const alliance = alliancesMatch.first();
 
-            if(alliance.isAFK(message.member)){
+            if (alliance.isAFK(message.member)) {
                 alliance.unsetAFK(message.member);
                 alliance.updateMessageEmbed();
             }
 
-            const messageSplit = message.content.split(':');
-            if (isIp.v4(messageSplit[0])) {
 
-                alliance.setIp(message.member, message.content).then(participant => {
-                    alliancesManager.saveAlliance(alliance);
-                    alliance.updateMessageEmbed();
-                }).catch(err => console.log(err));
-                message.delete();
-                return;
+            const reg = /((\d{1,3}\.){3}\d{1,3}:\d+)/g;
+            const found = message.content.trim().match(reg)
+            if (found !== null) {
+                let messageIPPort = found[0];
+
+                const messageSplit = messageIPPort.split(':');
+                if (isIp.v4(messageSplit[0])) {
+
+                    alliance.setIp(message.member, messageIPPort).then(participant => {
+                        alliancesManager.saveAlliance(alliance);
+                        alliance.updateMessageEmbed();
+                    }).catch(err => console.log(err));
+                    message.delete();
+                    return;
+                }
             }
 
-            if(message.content === `afk`){
+            if (message.content === `afk`) {
                 alliance.setAFK(message.member).then(async participant => {
                     alliance.updateMessageEmbed();
                     message.delete();
@@ -78,10 +86,18 @@ client.on('message', async message => {
                 return;
             }
 
-            if(alliance.proprietaireID === message.author.id) {
+            if (message.content === `software`) {
+                sendSotServerFinder(message.member).catch(err => {
+                    console.log(err);
+                    reaction.users.remove(user);
+                });
+                return;
+            }
+
+            if (alliance.proprietaireID === message.author.id) {
                 let members = message.mentions.members.filter(u => u.user.bot === false);
                 if (members.size) {
-                    if(message.content.startsWith(`afk `)){
+                    if (message.content.startsWith(`afk `)) {
                         const user = members.first();
                         alliance.setAFK(user).then(async participant => {
                             alliance.updateMessageEmbed();
@@ -92,22 +108,22 @@ client.on('message', async message => {
                             reaction.users.remove(user);
                         });
                         return;
-                    } else if(message.content.startsWith(`creator `)){
+                    } else if (message.content.startsWith(`creator `)) {
                         const user = await alliancesManager.setProprietaireID(members.first(), alliance);
                         alliance.updateMessageEmbed();
                         console.log(`Le nouveau créateur de cette alliance est ${user}`);
                         await replyMessageTemp(message, `Le nouveau créateur de cette alliance est ${user}`);
                         return;
                     }
-                } else if(message.content === `countdownSpeed`){
+                } else if (message.content === `countdownSpeed`) {
                     let countdownIsSpeed = alliance.switchCountdownSpeed();
                     await replyMessageTemp(message, `Le décompte est désormais en **mode ` + (countdownIsSpeed ? 'rapide' : 'lent') + '**.');
                     return;
-                } else if(message.content === `muteMembers`){
+                } else if (message.content === `muteMembers`) {
                     let muteMembersStatut = alliance.switchMuteMembers();
-                    if(muteMembersStatut){
+                    if (muteMembersStatut) {
                         await replyMessageTemp(message, `Les membres du Vocal seront mute pendant le décompte.`);
-                    }else{
+                    } else {
                         await replyMessageTemp(message, `Les membres du Vocal ne seront pas mute pendant le décompte.`);
                     }
                     return;
@@ -228,9 +244,9 @@ client.on('messageReactionRemove', async (reaction, user) => {
             let alliance = alliancesMatch.first();
             alliancesManager.removeReaction(reaction, user, alliance);
         }
-    } else if(user.bot === true && user.id === client.user.id) {
+    } else if (user.bot === true && user.id === client.user.id) {
         const emojis = ['🤚', '⚓', '🗑️', '⏳', '🔄', '❌'];
-        if(emojis.includes(reaction.emoji.name)){
+        if (emojis.includes(reaction.emoji.name)) {
             const alliancesManager = AllianceManager.getInstance(reaction.message.guild);
             let alliancesMatch = alliancesManager.alliances.filter(a => a.messageID === reaction.message.id);
 
@@ -274,4 +290,11 @@ async function replyMessageTemp(message, text) {
     const msg = await message.reply(text);
     await msg.delete({timeout: 5000}).catch(e => console.log(e));
     message.delete();
+}
+
+async function sendSotServerFinder(user) {
+    // Create the attachment using MessageAttachment
+    const attachment = new MessageAttachment('./Ressources/SoTServerFinder.exe');
+    // Send the attachment in the message channel with a content
+    message.channel.send(`${message.author},`, attachment);
 }

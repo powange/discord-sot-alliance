@@ -300,7 +300,7 @@ module.exports = class Alliance {
             if (GuildMember.voice.channelID === this.voiceChannelID) {
                 participantDisplay.push('🔉');
             }
-            participantDisplay.push(username);
+            participantDisplay.push(username.substr(0, 16));
 
             participantsDisplay.push(participantDisplay.join(' '));
 
@@ -354,7 +354,8 @@ module.exports = class Alliance {
                 `🗑️ Supprime l'ip:port que vous avez rentré.\n` +
                 `⏳ Signaler que vous passez votre tour pour le prochain lancement.\n\n` +
                 `**Commandes :**\n` +
-                `**afk** : se met en mode afk.\n\n` +
+                `**afk** : se met en mode afk.\n` +
+                `**software** : recevoir le software qui permet de récupérer l'ip:port.\n\n` +
                 `**Les réactions réservées au participant créateur (👑) :**\n` +
                 `🔄 Reset les adresses ip:port, ainsi que l'état sur la levé de l'ancre.\n` +
                 `❌ Supprime la création d'alliance définitivement.\n\n` +
