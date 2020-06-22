@@ -88,6 +88,7 @@ client.on('message', async message => {
             if (message.content.trim() === `software`) {
                 sendSotServerFinder(message.member).catch(err => {
                     console.log(err);
+                    message.delete();
                 });
                 return;
             }
