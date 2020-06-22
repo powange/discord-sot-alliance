@@ -1,6 +1,5 @@
 const fs = require('fs');
 const Discord = require('discord.js');
-const {MessageAttachment} = require('discord.js');
 const AllianceManager = require('./src/allianceManager');
 const isIp = require('is-ip');
 
@@ -75,7 +74,7 @@ client.on('message', async message => {
                 }
             }
 
-            if (message.content === `afk`) {
+            if (message.content.trim() === `afk`) {
                 alliance.setAFK(message.member).then(async participant => {
                     alliance.updateMessageEmbed();
                     message.delete();
@@ -86,10 +85,9 @@ client.on('message', async message => {
                 return;
             }
 
-            if (message.content === `software`) {
+            if (message.content.trim() === `software`) {
                 sendSotServerFinder(message.member).catch(err => {
                     console.log(err);
-                    reaction.users.remove(user);
                 });
                 return;
             }
@@ -293,8 +291,10 @@ async function replyMessageTemp(message, text) {
 }
 
 async function sendSotServerFinder(user) {
-    // Create the attachment using MessageAttachment
-    const attachment = new MessageAttachment('./Ressources/SoTServerFinder.exe');
-    // Send the attachment in the message channel with a content
-    message.channel.send(`${message.author},`, attachment);
+    return user.send({
+        files: [{
+            attachment: './Ressources/SoTServerFinder.exe',
+            name: 'SoTServerFinder.exe'
+        }]
+    });
 }
