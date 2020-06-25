@@ -1,6 +1,5 @@
 const Discord = require('discord.js');
 const {Guild} = require('discord.js');
-const AllianceManager = require('./allianceManager');
 
 module.exports = class Alliance {
 
@@ -146,7 +145,7 @@ module.exports = class Alliance {
         if (this.participants.hasOwnProperty(user.id)) {
             return this.participants[user.id].afk;
         }
-        throw new Error('Le participant n\'existe pas');
+        // throw new Error('Le participant n\'existe pas');
     }
 
     /**

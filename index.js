@@ -1,6 +1,7 @@
 const fs = require('fs');
 const Discord = require('discord.js');
 const AllianceManager = require('./src/allianceManager');
+const UpdateAlliance = require('./src/updateAlliance');
 const isIp = require('is-ip');
 
 const client = new Discord.Client({partials: ['MESSAGE', 'REACTION']});
@@ -51,11 +52,7 @@ client.on('message', async message => {
         if (alliancesMatch.size) {
             const alliance = alliancesMatch.first();
 
-            if (alliance.isAFK(message.member)) {
-                alliance.unsetAFK(message.member);
-                alliance.updateMessageEmbed();
-            }
-
+            alliancesManager.removeAFK(message.member, alliance);
 
             const reg = /((\d{1,3}\.){3}\d{1,3}:\d+)/g;
             const found = message.content.trim().match(reg)
@@ -64,7 +61,6 @@ client.on('message', async message => {
 
                 const messageSplit = messageIPPort.split(':');
                 if (isIp.v4(messageSplit[0])) {
-
                     alliance.setIp(message.member, messageIPPort).then(participant => {
                         alliancesManager.saveAlliance(alliance);
                         alliance.updateMessageEmbed();
@@ -86,9 +82,10 @@ client.on('message', async message => {
             }
 
             if (message.content.trim() === `software`) {
-                sendSotServerFinder(message.member).catch(err => {
-                    console.log(err);
+                sendSotFleetCreator(message.member).then(async participant => {
                     message.delete();
+                }).catch(err => {
+                    console.log(err);
                 });
                 return;
             }
@@ -299,3 +296,21 @@ async function sendSotServerFinder(user) {
         }]
     });
 }
+
+async function sendSotFleetCreator(user) {
+    const exampleEmbed = new Discord.MessageEmbed()
+        .setColor('#0099ff')
+        .setTitle('Créateur de Flotte SOT')
+        .setURL('https://fleetcreator.com/fr/')
+        .setDescription('Téléchargez Fleet Creator, lancez le, mettez vous en mode "En ligne", et liez votre compte Discord.')
+
+    return user.send(exampleEmbed);
+}
+
+function updateAllIP() {
+    const updateAlliance = UpdateAlliance.getInstance();
+    updateAlliance.updateAllIP();
+}
+
+setInterval(updateAllIP, 3000);
+updateAllIP();

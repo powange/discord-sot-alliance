@@ -20,6 +20,10 @@ module.exports = class AllianceManager {
         return instance[guild.id];
     }
 
+    static getAllInstance() {
+        return instance;
+    }
+
     /**
      * @param guild {Guild}
      */
@@ -39,18 +43,23 @@ module.exports = class AllianceManager {
 
         this.alliances = new Collection();
         for (var key in alliances) {
-            let alliance = new Alliance(this.guild);
-            alliance.categoryChannelID = alliances[key].categoryChannelID;
-            alliance.textChannelID = alliances[key].textChannelID;
-            alliance.voiceChannelID = alliances[key].voiceChannelID;
-            alliance.messageID = alliances[key].messageID;
-            alliance.amount = alliances[key].amount;
-            alliance.boatType = alliances[key].boatType;
-            alliance.countdownFile = alliances[key].countdownFile;
-            alliance.muteMembers = alliances[key].muteMembers;
-            alliance.proprietaireID = alliances[key].proprietaireID;
-            alliance.participants = alliances[key].participants;
-            this.alliances.set(alliance.categoryChannelID, alliance);
+
+            let channel = this.guild.channels.cache.get(alliances[key].categoryChannelID);
+            if(channel){
+                let alliance = new Alliance(this.guild);
+                alliance.categoryChannelID = alliances[key].categoryChannelID;
+                alliance.textChannelID = alliances[key].textChannelID;
+                alliance.voiceChannelID = alliances[key].voiceChannelID;
+                alliance.messageID = alliances[key].messageID;
+                alliance.amount = alliances[key].amount;
+                alliance.boatType = alliances[key].boatType;
+                alliance.countdownFile = alliances[key].countdownFile;
+                alliance.muteMembers = alliances[key].muteMembers;
+                alliance.proprietaireID = alliances[key].proprietaireID;
+                alliance.participants = alliances[key].participants;
+                this.alliances.set(alliance.categoryChannelID, alliance);
+            }
+            this.saveAlliances();
         }
     }
 
@@ -207,10 +216,7 @@ module.exports = class AllianceManager {
             return;
         }
 
-        if (alliance.isAFK(user)) {
-            alliance.unsetAFK(user);
-            alliance.updateMessageEmbed();
-        }
+        this.removeAFK(user, alliance);
 
         if (reaction.emoji.name === '⚓') {
             alliance.setReady(user).then(participant => {
@@ -304,11 +310,6 @@ module.exports = class AllianceManager {
      * @param alliance {Alliance}
      */
     removeReaction(reaction, user, alliance) {
-        if (alliance.isAFK(user)) {
-            alliance.unsetAFK(user);
-            alliance.updateMessageEmbed();
-        }
-
         if (reaction.emoji.name === '🤚') {
             alliance.removeParticipant(user).then(participant => {
                 this.saveAlliance(alliance);
@@ -318,6 +319,7 @@ module.exports = class AllianceManager {
                 })
             }).catch(err => console.log(err));
         } else if (reaction.emoji.name === '⚓') {
+            this.removeAFK(user, alliance);
             alliance.unsetReady(user).then(participant => {
                 this.saveAlliance(alliance);
                 alliance.updateMessageEmbed();
@@ -325,6 +327,7 @@ module.exports = class AllianceManager {
                 reaction.users.remove(user);
             });
         } else if (reaction.emoji.name === '⏳') {
+            this.removeAFK(user, alliance);
             alliance.unsetSkip(user).then(participant => {
                 this.saveAlliance(alliance);
                 alliance.updateMessageEmbed();
@@ -333,7 +336,20 @@ module.exports = class AllianceManager {
                 reaction.users.remove(user);
             });
         } else {
+            this.removeAFK(user, alliance);
             reaction.users.remove(user);
+        }
+    }
+
+    /**
+     *
+     * @param user
+     * @param alliance {Alliance}
+     */
+    removeAFK(user, alliance){
+        if (alliance.isAFK(user)) {
+            alliance.unsetAFK(user);
+            alliance.updateMessageEmbed();
         }
     }
 
