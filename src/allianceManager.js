@@ -117,7 +117,7 @@ module.exports = class AllianceManager {
                 return Promise.all([createText, createVoice]).then(($arr) => {
                     console.log('Promises Finished', $arr);
                     this.saveAlliance(alliance);
-                    alliance.updateMessageEmbed();
+                    alliance.createMessagesEmbed();
                     return alliance;
                 });
 

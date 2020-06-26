@@ -340,40 +340,18 @@ module.exports = class Alliance {
 
         const exampleEmbed = new Discord.MessageEmbed()
             .setColor(this.getColorEmbed(this.amount, this.getMaxBoatsMatchServer()))
-            .setTitle('Création d\'alliance')
-            .setDescription(`Cette alliance cherche à rassembler **${this.amount} ${this.boatType}s** depuis ${durationMin} minutes.\n\n` +
-                `**Comment ça marche ?**\n\n` +
-                `1 - Signalez d'abord que vous participez à la création de l'alliance en cliquant sur 🤚.\n` +
-                `2 - Préparez une partie en mode Aventure avec un ${this.boatType} en équipage fermé, puis cliquez sur ⚓.\n` +
-                `3 - Un décompte audio dans le vocal Discord aura lieu. À la fin du décompte, cliquez dans votre jeu, sur "Lever l'ancre".\n` +
-                `4 - Une fois votre ip:port du server récupéré, copier la simplement dans ce channel.\n\n` +
-                `**Les réactions :**\n` +
-                `🤚 Signaler que l'on participe à la création.\n` +
-                `⚓ Indique que vous êtes prêt à lever l'ancre.\n` +
-                `🗑️ Supprime l'ip:port que vous avez rentré.\n` +
-                `⏳ Signaler que vous passez votre tour pour le prochain lancement.\n\n` +
-                `**Commandes :**\n` +
-                `**afk** : se met en mode afk.\n` +
-                `**software** : recevoir le software qui permet de récupérer l'ip:port.\n\n` +
-                `**Les réactions réservées au participant créateur (👑) :**\n` +
-                `🔄 Reset les adresses ip:port, ainsi que l'état sur la levé de l'ancre.\n` +
-                `❌ Supprime la création d'alliance définitivement.\n\n` +
-                `**Commandes réservées au participant créateur (👑) :**\n` +
-                `**creator @username** : Défini username comme nouveau créateur de l'alliance.\n` +
-                `**afk @username** : Défini username comme étant afk.\n` +
-                `**countdownSpeed** : Active ou désactive le décompte rapide.\n` +
-                `**muteMembers** : Active ou désactive le mute des membres du Vocal pendant le décompte.\n\n`
-            )
+            .setTitle(`Création d\'alliance de **${this.amount} ${this.boatType}s**`)
             .addField('\u200b', '\u200b')
             .addField('Participants', participantsDisplay.join("\n"), true)
             .addField('Prêt à lever l\'ancre', readyDisplay.join("\n"), true)
             .addField('IP', IPDisplay.join("\n"), true)
-            .addField('\u200b', '\u200b')
-            .setFooter(`Discord SOT Launch Alliance créé par powange#6460`);
+            .setFooter(`Cette alliance cherche à rassembler ${this.amount} ${this.boatType}s depuis ${durationMin} minutes.\n\n`);
 
 
         if (Object.keys(this.participants).length < this.amount) {
-            exampleEmbed.addField('⚠ Attention ⚠', `Il n'y a actuellement pas assez de participants pour créer une alliance de ${this.amount} bateaux.`, false);
+            exampleEmbed
+                .addField('\u200b', '\u200b')
+                .addField('⚠ Attention ⚠', `Il n'y a actuellement pas assez de participants pour créer une alliance de ${this.amount} bateaux.`, false);
         }
 
         let matchServer = this.getMatchServer();
@@ -396,7 +374,6 @@ module.exports = class Alliance {
                 sentMessage.react('🔄');
                 sentMessage.react('❌');
             });
-
         } else {
             textChannel.messages.fetch(this.messageID)
                 .then(message => {
@@ -404,6 +381,52 @@ module.exports = class Alliance {
                 })
                 .catch(console.error);
         }
+    }
+
+    async createMessagesEmbed(){
+        let textChannel = this.guild.channels.cache.get(this.textChannelID);
+
+        const HowMessage = new Discord.MessageEmbed()
+            .setColor('rgba(255,0,0,0)')
+            .setTitle('Comment ça marche ?')
+            .setDescription(`1 - Signalez d'abord que vous participez à la création de l'alliance en cliquant sur 🤚.\n` +
+                `2 - Préparez une partie en mode Aventure avec un ${this.boatType} en équipage fermé, puis cliquez sur ⚓.\n` +
+                `3 - Un décompte audio dans le vocal Discord aura lieu. À la fin du décompte, cliquez dans votre jeu, sur "Lever l'ancre".\n` +
+                `4 - Une fois votre ip:port du server récupéré, copier la simplement dans ce channel.\n\n`
+            )
+            .setFooter(`Discord SOT Launch Alliance créé par powange#6460`);
+
+        const CommandsMessage = new Discord.MessageEmbed()
+            .setColor('rgba(255,0,0,0)')
+            .setTitle('Les actions pour tout le monde')
+            .setDescription(`**Les réactions :**\n` +
+                `🤚 Signaler que l'on participe à la création.\n` +
+                `⚓ Indique que vous êtes prêt à lever l'ancre.\n` +
+                `🗑️ Supprime l'ip:port que vous avez rentré.\n` +
+                `⏳ Signaler que vous passez votre tour pour le prochain lancement.\n\n` +
+                `**Commandes :**\n` +
+                `**afk** : se met en mode afk.\n` +
+                `**software** : recevoir le software qui permet de récupérer l'ip:port.`
+            );
+
+        const CommandsCreatorMessage = new Discord.MessageEmbed()
+            .setColor('rgba(255,0,0,0)')
+            .setTitle('Les actions réservés au participant créateur (👑)')
+            .setDescription(
+                `**Les réactions :**\n` +
+                `🔄 Reset les adresses ip:port, ainsi que l'état sur la levé de l'ancre.\n` +
+                `❌ Supprime la création d'alliance définitivement.\n\n` +
+                `**Commandes :**\n` +
+                `**creator @username** : Défini username comme nouveau créateur de l'alliance.\n` +
+                `**afk @username** : Défini username comme étant afk.\n` +
+                `**countdownSpeed** : Active ou désactive le décompte rapide.\n` +
+                `**muteMembers** : Active ou désactive le mute des membres du Vocal pendant le décompte.`
+            );
+
+        await textChannel.send(HowMessage);
+        await textChannel.send(CommandsMessage);
+        await textChannel.send(CommandsCreatorMessage);
+        this.updateMessageEmbed();
     }
 
     switchCountdownSpeed() {
